@@ -346,19 +346,23 @@ export default function App() {
     // Update the callGeminiApi function (rename it to match Stability AI usage)
     const callStabilityApi = useCallback(async (prompt, modelImg, itemImg) => {
         try {
+            // Format the request body according to Stability AI's requirements
+            const requestBody = {
+                prompt: prompt, // Add the prompt directly
+                text_prompts: [{
+                    text: prompt,
+                    weight: 1
+                }],
+                modelImg: modelImg,
+                itemImg: itemImg
+            };
+
             const response = await fetch('http://localhost:3001/api/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    text_prompts: [{
-                        text: prompt,
-                        weight: 1
-                    }],
-                    modelImg: modelImg,
-                    itemImg: itemImg
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
@@ -388,18 +392,22 @@ export default function App() {
             setError("Please provide both a model and an item image.");
             return;
         }
+        
         setIsLoading(true);
         setError(null);
         setGeneratedImage(null);
         
-        const defaultPrompt = `Create a photorealistic image of the model wearing the clothing item. 
-        Maintain the model's pose and facial features while naturally fitting the clothing. 
-        Ensure proper lighting, shadows, and texture integration. 
-        Keep the original background. Style: photorealistic, high-quality fashion photography.`;
+        const defaultPrompt = "Create a photorealistic image of the model wearing the clothing item. Maintain natural lighting and original background.";
+        const finalPrompt = customPrompt.trim() || defaultPrompt;
         
-        const prompt = customPrompt || defaultPrompt;
-        
-        await callStabilityApi(prompt, modelImage, itemImage);
+        try {
+            await callStabilityApi(finalPrompt, modelImage, itemImage);
+        } catch (error) {
+            setError("Failed to generate image. Please try again.");
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleDownload = () => {
