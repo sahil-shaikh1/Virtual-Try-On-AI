@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: virtual-try-on-backend
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: STABILITY_API_KEY
+        sync: false
+      - key: NODE_ENV
+        value: production
+
+  - type: web
+    name: virtual-try-on-frontend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run preview
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: virtual-try-on-backend
+          type: web
+          property: url
